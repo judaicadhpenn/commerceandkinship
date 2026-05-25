@@ -1,7 +1,4 @@
-# Sample workflow for building and deploying an Astro site to GitHub Pages
-#
-# To get started with Astro see: https://docs.astro.build/en/getting-started/
-#
+ 
 name: Deploy Astro site to Pages
 
 on:
@@ -48,7 +45,7 @@ jobs:
 
       - name: Process Raw Data (GEDCOM Merge & JSON-LD Generation)
         run: |
-          mkdir -p src/data
+          mkdir -p src/raw_data
           mkdir -p public 
           # 1. Parse incoming GEDCOMs and merge into the master JSON
           python scripts/gedcom_to_graph.py
