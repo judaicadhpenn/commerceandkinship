@@ -1,0 +1,80 @@
+---
+// src/pages/entity/[id].astro
+import graphData from '../../raw_data/kinship-commerce-graph.json';
+
+// 1. Tell Astro which pages to generate
+export function getStaticPaths() {
+    return graphData.nodes.map(node => {
+        return {
+            params: { id: node.id },
+            props: { node } // Pass the full node data to the template
+        };
+    });
+}
+
+// 2. Grab the specific data for the page currently being built
+const { id } = Astro.params;
+const { node } = Astro.props;
+
+// Find all edges connected to this specific node
+const connectedEdges = graphData.edges.filter(e => e.from === id || e.to === id);
+---
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>{node.label} | Archive</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #fbf6ec; color: #2a2118; padding: 2rem; max-width: 600px; margin: 0 auto; }
+        .badge { background: #e0d5c1; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .relationship { padding: 0.5rem 0; border-bottom: 1px dashed #cdbfa3; }
+    </style>
+</head>
+<body>
+<a href="/">&larr; Back to Directory</a>
+
+<h1 style="margin-bottom: 0.2rem;">{node.label}</h1>
+<span class="badge">{node.type}</span>
+
+<p style="font-size: 1.1rem; line-height: 1.6;">{node.summary}</p>
+
+{node.properties && (
+        <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #cdbfa3;">
+            <h3>Details</h3>
+            <ul>
+                {Object.entries(node.properties).map(([key, value]) => (
+                        <li><strong>{key}:</strong> {value}</li>
+                ))}
+            </ul>
+        </div>
+)}
+
+<h3>Connections in the Archive</h3>
+<div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #cdbfa3;">
+    {connectedEdges.length === 0 ? <p>No connections recorded yet.</p> : null}
+
+    {connectedEdges.map(edge => {
+        // Determine the ID of the *other* node in this relationship
+        const isOutgoing = edge.from === id;
+        const otherNodeId = isOutgoing ? edge.to : edge.from;
+
+        // Look up the label of the other node
+        const otherNode = graphData.nodes.find(n => n.id === otherNodeId);
+        if (!otherNode) return null; // Fallback if pointing to an edge (artifact evidence)
+
+        return (
+                <div class="relationship">
+            <span style="color: #5d5142; font-size: 0.85em; text-transform: uppercase;">
+              {isOutgoing ? edge.type : `TARGET OF ${edge.type}`}
+            </span>
+                    <br />
+                    <a href={`/entity/${otherNode.id}`} style="color: #2a2118; font-weight: bold;">
+                        {otherNode.label}
+                    </a>
+                    <span style="font-size: 0.7em; margin-left: 10px; color: #fa8c00;">({edge.confidence})</span>
+                </div>
+        )
+    })}
+</div>
+</body>
+</html>

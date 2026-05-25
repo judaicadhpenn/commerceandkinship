@@ -1,0 +1,50 @@
+---
+// src/pages/index.astro
+// Astro can import JSON directly!
+import graphData from '../raw_data/kinship-commerce-graph.json';
+
+// Filter the nodes into categories
+const people = graphData.nodes.filter(n => n.type === 'PERSON');
+const firms = graphData.nodes.filter(n => n.type === 'BUSINESS');
+const artifacts = graphData.nodes.filter(n => n.type === 'ARTIFACT');
+---
+
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Kinship & Commerce Archive</title>
+	<style>
+		body { font-family: system-ui, sans-serif; background: #fbf6ec; color: #2a2118; padding: 2rem; max-width: 800px; margin: 0 auto; }
+		.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+		a { color: #9c4a2e; text-decoration: none; font-weight: bold; }
+		a:hover { text-decoration: underline; }
+		.card { background: white; padding: 1rem; border-radius: 8px; border: 1px solid #cdbfa3; margin-bottom: 1rem; }
+	</style>
+</head>
+<body>
+<h1>Kinship & Commerce Archive</h1>
+<p>Explore the historical network of merchants, families, and evidence.</p>
+
+<div class="grid">
+	<section>
+		<h2>People ({people.length})</h2>
+		{people.map(person => (
+			<div class="card">
+				<a href={`/entity/${person.id}`}>{person.label}</a>
+				<p style="font-size: 0.9em; margin: 0.5em 0 0;">{person.summary}</p>
+			</div>
+		))}
+	</section>
+
+	<section>
+		<h2>Firms & Guilds ({firms.length})</h2>
+		{firms.map(firm => (
+			<div class="card">
+				<a href={`/entity/${firm.id}`} style="color: #2f5d52;">{firm.label}</a>
+				<p style="font-size: 0.9em; margin: 0.5em 0 0;">{firm.summary}</p>
+			</div>
+		))}
+	</section>
+</div>
+</body>
+</html>
