@@ -68,7 +68,7 @@ const connectedEdges = graphData.edges.filter(e => e.from === id || e.to === id)
               {isOutgoing ? edge.type : `TARGET OF ${edge.type}`}
             </span>
                     <br />
-                    <a href={`/entity/${otherNode.id}`} style="color: #2a2118; font-weight: bold;">
+                    <a href={`/commerceandkinship/entity/${otherNode.id}`} style="color: #2a2118; font-weight: bold;">
                         {otherNode.label}
                     </a>
                     <span style="font-size: 0.7em; margin-left: 10px; color: #fa8c00;">({edge.confidence})</span>
