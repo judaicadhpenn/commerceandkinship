@@ -110,16 +110,22 @@ def gedcom_to_graph(gedcom_file_path, master_json_path):
 
 
 if __name__ == "__main__":
-    # Point directly to your src/data folder where Astro reads your master file
     master_file = 'src/raw_data/kinship-commerce-graph.json'
 
-    # Check for any incoming GEDCOM files in your raw repository upload folder
-    ged_files = glob.glob('raw_data/*.ged')
+    # Fix 1: Point glob to the correct src/raw_data folder
+    ged_files = glob.glob('src/raw_data/*.ged')
+
+    # Guarantee the destination folder directory structure exists
+    os.makedirs(os.path.dirname(master_file), exist_ok=True)
 
     if ged_files:
-        # Guarantee the destination folder directory structure exists
-        os.makedirs(os.path.dirname(master_file), exist_ok=True)
         for ged_file in ged_files:
             gedcom_to_graph(ged_file, master_file)
     else:
-        print("No new GEDCOM files detected in raw_data/. Skipping genealogical merge.")
+        print("No new GEDCOM files detected in src/raw_data/. Skipping genealogical merge.")
+
+        # Fix 2: If the JSON file doesn't exist at all, create an empty one so Astro doesn't crash
+        if not os.path.exists(master_file):
+            print("Creating empty master graph for Astro to build from...")
+            with open(master_file, 'w', encoding='utf-8') as f:
+                json.dump({"nodes": [], "edges": []}, f)cal merge.")
