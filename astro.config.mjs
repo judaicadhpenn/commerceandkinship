@@ -6,5 +6,5 @@ export default defineConfig({
     site: 'https://judaicadh.github.io',
     // Replace with your repository name
     base: '/commercekinship',
-  
+
 });

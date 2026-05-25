@@ -1,50 +1,523 @@
 ---
-// src/pages/index.astro
-// Astro can import JSON directly!
+// Import your master property graph
 import graphData from '../raw_data/kinship-commerce-graph.json';
-
-// Filter the nodes into categories
-const people = graphData.nodes.filter(n => n.type === 'PERSON');
-const firms = graphData.nodes.filter(n => n.type === 'BUSINESS');
-const artifacts = graphData.nodes.filter(n => n.type === 'ARTIFACT');
+import "../styles/global.css";
 ---
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<title>Kinship & Commerce Archive</title>
-	<style>
-		body { font-family: system-ui, sans-serif; background: #fbf6ec; color: #2a2118; padding: 2rem; max-width: 800px; margin: 0 auto; }
-		.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-		a { color: #9c4a2e; text-decoration: none; font-weight: bold; }
-		a:hover { text-decoration: underline; }
-		.card { background: white; padding: 1rem; border-radius: 8px; border: 1px solid #cdbfa3; margin-bottom: 1rem; }
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Kinship & Commerce Graph</title>
+	<style is:global>
+		/* We only need to import the fonts and create the textured background.
+           Tailwind will handle the rest via utility classes. */
+		@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Spline+Sans+Mono:wght@400;500&family=Spline+Sans:wght@400;500;600&display=swap');
+
+		body {
+			background:
+				radial-gradient(circle at 12% 8%, #fbf4e5 0, transparent 55%),
+				radial-gradient(circle at 88% 92%, #efe5d0 0, transparent 50%),
+				#f4ede0;
+			background-attachment: fixed;
+		}
+		body::before {
+			content:""; position:fixed; inset:0; pointer-events:none; opacity:.5;
+			background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+			z-index:0;
+		}
 	</style>
 </head>
-<body>
-<h1>Kinship & Commerce Archive</h1>
-<p>Explore the historical network of merchants, families, and evidence.</p>
+<body class="font-['Spline_Sans',_system-ui,_sans-serif] text-[#2a2118] antialiased m-0 h-full">
 
-<div class="grid">
-	<section>
-		<h2>People ({people.length})</h2>
-		{people.map(person => (
-			<div class="card">
-				<a href={`/commerceandkinship/entity/${person.id}`}>{person.label}</a>
-				<p style="font-size: 0.9em; margin: 0.5em 0 0;">{person.summary}</p>
-			</div>
-		))}
-	</section>
+<a href="#main" class="absolute -left-[999px] top-0 bg-[#2a2118] text-[#f4ede0] px-4 py-2.5 rounded-md z-50 focus:left-2 focus:top-2">Skip to main content</a>
 
-	<section>
-		<h2>Firms & Guilds ({firms.length})</h2>
-		{firms.map(firm => (
-			<div class="card">
-				<a href={`/entity/${firm.id}`} style="color: #2f5d52;">{firm.label}</a>
-				<p style="font-size: 0.9em; margin: 0.5em 0 0;">{firm.summary}</p>
+<div class="relative z-10 max-w-[1180px] mx-auto px-5 pt-[22px] pb-20">
+	<header class="flex items-end justify-between gap-5 flex-wrap pb-3.5 border-b-2 border-[#2a2118]">
+		<div>
+			<h1 class="font-['Fraunces',_serif] font-semibold text-[clamp(1.7rem,3.4vw,2.5rem)] m-0 -tracking-[.02em] leading-none">Kinship&nbsp;&amp;&nbsp;Commerce&nbsp;Graph</h1>
+			<p class="mt-1.5 text-[#5d5142] text-[.86rem] max-w-[46ch]">
+				One sound structure for <span class="text-[#9c4a2e]">families</span> and their <span class="text-[#2f5d52]">merchant networks</span> — with artifacts attached as shared evidence.
+			</p>
+		</div>
+
+		<div role="tablist" aria-label="Choose a view" class="flex gap-1.5 bg-[#ece2cf] border-[1.5px] border-[#cdbfa3] rounded-xl p-1">
+			<button role="tab" id="tab-cards" aria-selected="true" aria-controls="view-cards" data-action="view" data-arg="cards"
+					class="font-semibold text-[.82rem] border-0 bg-transparent text-[#5d5142] cursor-pointer px-3.5 py-2 rounded-lg flex items-center gap-2 transition-colors hover:text-[#2a2118] aria-selected:bg-[#fbf6ec] aria-selected:text-[#2a2118] aria-selected:shadow-[0_2px_0_rgba(42,33,24,.08),_0_12px_28px_-14px_rgba(42,33,24,.4)]">
+				<span class="w-2.5 h-2.5 rounded-full bg-[#2a2118]"></span>Simple cards
+			</button>
+			<button role="tab" id="tab-tree" aria-selected="false" aria-controls="view-tree" data-action="view" data-arg="tree"
+					class="font-semibold text-[.82rem] border-0 bg-transparent text-[#5d5142] cursor-pointer px-3.5 py-2 rounded-lg flex items-center gap-2 transition-colors hover:text-[#2a2118] aria-selected:bg-[#fbf6ec] aria-selected:text-[#2a2118] aria-selected:shadow-[0_2px_0_rgba(42,33,24,.08),_0_12px_28px_-14px_rgba(42,33,24,.4)]">
+				<span class="w-2.5 h-2.5 rounded-full bg-[#9c4a2e]"></span>Family tree
+			</button>
+			<button role="tab" id="tab-net" aria-selected="false" aria-controls="view-net" data-action="view" data-arg="net"
+					class="font-semibold text-[.82rem] border-0 bg-transparent text-[#5d5142] cursor-pointer px-3.5 py-2 rounded-lg flex items-center gap-2 transition-colors hover:text-[#2a2118] aria-selected:bg-[#fbf6ec] aria-selected:text-[#2a2118] aria-selected:shadow-[0_2px_0_rgba(42,33,24,.08),_0_12px_28px_-14px_rgba(42,33,24,.4)]">
+				<span class="w-2.5 h-2.5 rounded-full bg-[#2f5d52]"></span>Full network
+			</button>
+		</div>
+	</header>
+
+	<div class="flex items-center gap-3 flex-wrap mt-[18px] mb-1.5">
+		<input class="font-['Spline_Sans'] text-[.83rem] text-[#2a2118] bg-[#fbf6ec] border-[1.5px] border-[#cdbfa3] rounded-lg px-3 py-2 min-w-[190px]"
+			   type="search" id="search" placeholder="Search people, firms…" aria-label="Search the graph">
+		<select class="font-['Spline_Sans'] text-[.83rem] text-[#2a2118] bg-[#fbf6ec] border-[1.5px] border-[#cdbfa3] rounded-lg px-3 py-2"
+				id="confFilter" aria-label="Filter by confidence">
+			<option value="ALL">All confidence levels</option>
+			<option value="CONFIRMED">Confirmed only</option>
+			<option value="PROBABLE">Probable &amp; better</option>
+		</select>
+		<span class="text-[.8rem] text-[#5d5142]" id="viewHint"></span>
+		<span class="flex-1"></span>
+		<span class="text-[.74rem] text-[#5d5142]" id="saveNote">Saved automatically</span>
+
+		<button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px active:translate-y-0" data-action="export" title="Download this graph as a JSON file">&#8595; Export</button>
+		<button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px active:translate-y-0" data-action="import" title="Load a graph from a JSON file">&#8593; Import</button>
+		<input type="file" id="importFile" accept="application/json,.json" class="sr-only">
+
+		<button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px active:translate-y-0" data-action="add" data-arg="ARTIFACT">+ Artifact</button>
+		<button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px active:translate-y-0" data-action="add" data-arg="BUSINESS">+ Firm</button>
+		<button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-[#2a2118] text-[#f4ede0] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px active:translate-y-0" data-action="add" data-arg="PERSON">+ Person</button>
+	</div>
+
+	<main id="main">
+		<section id="view-cards" class="block" role="tabpanel" aria-labelledby="tab-cards" tabindex="-1">
+			<div class="grid grid-cols-[repeat(auto-fill,minmax(255px,1fr))] gap-4 mt-3.5" id="cardGrid"></div>
+		</section>
+
+		<section id="view-tree" class="hidden" role="tabpanel" aria-labelledby="tab-tree" tabindex="-1">
+			<div class="bg-[#fbf6ec] border-[1.5px] border-[#cdbfa3] rounded-[14px] shadow-[0_2px_0_rgba(42,33,24,.08),_0_12px_28px_-14px_rgba(42,33,24,.4)] mt-3.5 overflow-hidden">
+				<canvas id="treeCanvas" class="w-full h-[560px] block rounded-[13px]" aria-label="Family tree diagram. A text alternative is listed below."></canvas>
 			</div>
-		))}
-	</section>
+			<p class="sr-only" id="treeAlt"></p>
+		</section>
+
+		<section id="view-net" class="hidden" role="tabpanel" aria-labelledby="tab-net" tabindex="-1">
+			<div class="bg-[#fbf6ec] border-[1.5px] border-[#cdbfa3] rounded-[14px] shadow-[0_2px_0_rgba(42,33,24,.08),_0_12px_28px_-14px_rgba(42,33,24,.4)] mt-3.5">
+				<canvas id="netCanvas" class="w-full h-[600px] block rounded-[13px] cursor-grab active:cursor-grabbing" aria-label="Network diagram of people and businesses."></canvas>
+				<div class="flex gap-4 flex-wrap p-3 px-4 border-t-[1.5px] border-[#ddd0b5] text-[.78rem]">
+					<span class="flex items-center gap-1.5"><i class="w-3.5 h-3.5 rounded-[3px] bg-[#9c4a2e]"></i>Person</span>
+					<span class="flex items-center gap-1.5"><i class="w-3.5 h-3.5 rounded-[3px] bg-[#2f5d52]"></i>Business</span>
+					<span class="flex items-center gap-1.5"><i class="w-3.5 h-3.5 rounded-[3px] bg-[#b08326]"></i>Artifact</span>
+					<span class="flex items-center gap-1.5"><i class="w-[22px] h-0 border-t-[2.5px] border-solid border-[#9c4a2e]"></i>Family tie</span>
+					<span class="flex items-center gap-1.5"><i class="w-[22px] h-0 border-t-[2.5px] border-solid border-[#2f5d52]"></i>Commerce tie</span>
+					<span class="flex items-center gap-1.5"><i class="w-[22px] h-0 border-t-[2.5px] border-dashed border-[#b08326]"></i>Evidence</span>
+				</div>
+			</div>
+			<p class="sr-only" id="netAlt"></p>
+		</section>
+	</main>
 </div>
+
+<div class="fixed inset-0 bg-[#2a2118]/45 z-40 hidden" id="drawerBg" data-action="close-drawer"></div>
+<aside class="fixed top-0 right-0 h-full w-[min(440px,100%)] z-41 bg-[#fbf6ec] border-l-2 border-[#2a2118] translate-x-full transition-transform duration-250 ease-in-out overflow-y-auto" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+	<button class="border-0 bg-transparent text-[1.5rem] cursor-pointer text-[#5d5142] absolute top-3.5 right-3.5 leading-none" aria-label="Close details" data-action="close-drawer">&times;</button>
+	<div class="sticky top-0 bg-[#fbf6ec] px-5 pt-[18px] pb-3 border-b-[1.5px] border-[#cdbfa3]">
+		<div class="font-['Spline_Sans_Mono'] text-[.68rem] tracking-[.12em] uppercase text-[#5d5142]" id="drawerType"></div>
+		<h2 class="font-['Fraunces',_serif] text-2xl mt-1.5 mb-0" id="drawerTitle"></h2>
+	</div>
+	<div class="px-5 pt-4 pb-10" id="drawerBody"></div>
+</aside>
+
+<div class="fixed inset-0 bg-[#2a2118]/50 z-50 hidden items-center justify-center p-4.5" id="modalBg">
+	<div class="bg-[#fbf6ec] border-2 border-[#2a2118] rounded-[14px] w-[min(480px,100%)] max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+		<h3 class="font-['Fraunces',_serif] m-0 px-5 pt-[18px] pb-1 text-xl" id="modalTitle">Add</h3>
+		<form class="px-5 pt-2 pb-5" id="entityForm"></form>
+	</div>
+</div>
+
+<div aria-live="polite" class="sr-only" id="liveRegion"></div>
+
+<script is:inline define:vars={{ seedData: graphData }}>
+	const SEED = seedData;
+	let G = { nodes:[], edges:[] };
+	const clone = x => JSON.parse(JSON.stringify(x));
+
+	/* ---- persistence ---- */
+	async function load() {
+		try {
+			const r = await window.storage?.get('graph');
+			G = r ? JSON.parse(r.value) : clone(SEED);
+		} catch (e) { G = clone(SEED); }
+		render();
+	}
+	async function save() {
+		try {
+			await window.storage?.set('graph', JSON.stringify(G));
+			flash('Saved automatically');
+		} catch (e) { flash('Working in memory'); }
+	}
+	function flash(t){ document.getElementById('saveNote').textContent = t; }
+	function announce(t){ document.getElementById('liveRegion').textContent = t; }
+
+	/* ---- helpers ---- */
+	const node = id => G.nodes.find(n => n.id === id);
+	const edge = id => G.edges.find(e => e.id === id);
+	const TYPE_ICON = { PHOTO:'🖼️', DOCUMENT:'📄', LETTER:'✉', LEDGER:'📒', CONTRACT:'📜', AUDIO:'🎙', VIDEO:'🎬', OBJECT:'🏺', MAP:'🗺' };
+	const FAMILY_EDGES   = ['PARENT_OF','PARTNERED_WITH','SIBLING_OF','ADOPTED_BY','MEMBER_OF_HH'];
+	const COMMERCE_EDGES = ['OWNS','PARTNER_IN','EMPLOYS','TRADES_WITH','MEMBER_OF','SUCCEEDED_BY'];
+	const VERB = { PARENT_OF:'parent of', PARTNERED_WITH:'partnered with', SIBLING_OF:'sibling of',
+		ADOPTED_BY:'adopted by', OWNS:'owns', PARTNER_IN:'partner in', EMPLOYS:'employs',
+		TRADES_WITH:'trades with', MEMBER_OF:'member of', SUCCEEDED_BY:'succeeded by',
+		EVIDENCES:'evidences', DEPICTS:'depicts', AUTHORED_BY:'authored by' };
+
+	function passesFilter(n) {
+		const q = document.getElementById('search').value.trim().toLowerCase();
+		const cf = document.getElementById('confFilter').value;
+		if (q && !(n.label+' '+(n.summary||'')).toLowerCase().includes(q)) return false;
+		if (cf === 'CONFIRMED' && n.confidence !== 'CONFIRMED') return false;
+		if (cf === 'PROBABLE'  && n.confidence === 'UNCERTAIN') return false;
+		return true;
+	}
+
+	/* ============================================================
+       VIEW SWITCHING (Tailwind classes for block/hidden)
+    ============================================================ */
+	let currentView = 'cards';
+	const HINTS = {
+		cards:'One card per person or firm — tap any card for full detail.',
+		tree :'Family ties only, laid out by generation. Tap a name to open it.',
+		net  :'Every node and edge. Drag the background to pan, tap a node to inspect.'
+	};
+	function setView(v) {
+		currentView = v;
+		['cards','tree','net'].forEach(k => {
+			// Tailwind specific visibility toggle
+			if(k === v) {
+				document.getElementById('view-'+k).classList.remove('hidden');
+				document.getElementById('view-'+k).classList.add('block');
+			} else {
+				document.getElementById('view-'+k).classList.remove('block');
+				document.getElementById('view-'+k).classList.add('hidden');
+			}
+			const tab = document.getElementById('tab-'+(k==='net'?'net':k));
+			tab.setAttribute('aria-selected', k===v);
+		});
+		document.getElementById('viewHint').textContent = HINTS[v];
+		render();
+	}
+
+	function render() {
+		if (currentView === 'cards') { renderCards(); return; }
+		requestAnimationFrame(() => {
+			if (currentView === 'tree') renderTree();
+			if (currentView === 'net')  renderNet();
+		});
+	}
+
+	/* ============================================================
+       CARD VIEW (Tailwind strings for rendered DOM)
+    ============================================================ */
+	function renderCards() {
+		const grid = document.getElementById('cardGrid');
+		const items = G.nodes.filter(passesFilter);
+		if (!items.length) {
+			grid.innerHTML = '<div class="text-center py-12 px-5 text-[#5d5142]"><div class="font-[\'Fraunces\'] text-[1.15rem] text-[#2a2118]">Nothing matches your search.</div><p>Clear the search box, or add a new person.</p></div>';
+			return;
+		}
+		grid.innerHTML = items.map(n => {
+			const kin = G.edges.filter(e => FAMILY_EDGES.includes(e.type) && (e.from===n.id||e.to===n.id)).length;
+			const com = G.edges.filter(e => COMMERCE_EDGES.includes(e.type) && (e.from===n.id||e.to===n.id)).length;
+			const art = G.edges.filter(e => ['EVIDENCES','DEPICTS','AUTHORED_BY'].includes(e.type) && (node(e.from)===n || e.to===n.id)).length;
+
+			const confColor = n.confidence==='CONFIRMED' ? 'text-[#2f5d52]' : (n.confidence==='PROBABLE' ? 'text-[#b08326]' : 'text-[#9c4a2e]');
+
+			return `<article class="bg-[#fbf6ec] border-[1.5px] border-[#cdbfa3] rounded-[14px] shadow-[0_2px_0_rgba(42,33,24,.08),_0_12px_28px_-14px_rgba(42,33,24,.4)] p-4 cursor-pointer transition-transform hover:-translate-y-[3px]" tabindex="0" role="button" data-action="open" data-arg="${n.id}">
+      <div class="font-['Spline_Sans_Mono'] text-[.66rem] tracking-[.13em] uppercase text-[#5d5142]">${n.type}</div>
+      <h3 class="font-['Fraunces'] text-[1.22rem] mt-1.5 mb-1">${esc(n.label)}</h3>
+      <div class="text-[.84rem] text-[#5d5142] leading-[1.45]">${esc(n.summary||'No description yet.')}</div>
+      <div class="flex gap-1.5 flex-wrap mt-[11px]">
+        <span class="text-[.66rem] font-semibold uppercase tracking-[.06em] ${confColor}">${n.confidence}</span>
+        ${kin?`<span class="text-[.68rem] font-semibold px-2 py-[3px] rounded-full border-[1.3px] border-[#d8b29f] bg-[#f4ede0] text-[#9c4a2e]">${kin} family</span>`:''}
+        ${com?`<span class="text-[.68rem] font-semibold px-2 py-[3px] rounded-full border-[1.3px] border-[#a8c3ba] bg-[#f4ede0] text-[#2f5d52]">${com} commerce</span>`:''}
+        ${art?`<span class="text-[.68rem] font-semibold px-2 py-[3px] rounded-full border-[1.3px] border-[#dcc78a] bg-[#f4ede0] text-[#b08326]">${art} artifact${art>1?'s':''}</span>`:''}
+      </div>
+    </article>`;
+		}).join('');
+	}
+
+	/* ============================================================
+       DETAIL DRAWER (Tailwind toggle translations)
+    ============================================================ */
+	let lastFocus = null;
+	function openDrawer(id) {
+		const n = node(id); if (!n) return;
+		lastFocus = document.activeElement;
+		document.getElementById('drawerType').textContent = n.type;
+		document.getElementById('drawerTitle').textContent = n.label;
+
+		const confColor = n.confidence==='CONFIRMED' ? 'text-[#2f5d52]' : (n.confidence==='PROBABLE' ? 'text-[#b08326]' : 'text-[#9c4a2e]');
+		let html = `<section class="mb-[22px]"><p class="m-0 text-[.92rem] leading-[1.55]">${esc(n.summary||'No description yet.')}</p>
+    <p class="mt-2 mb-0"><span class="text-[.66rem] font-semibold uppercase tracking-[.06em] ${confColor}">${n.confidence}</span></p></section>`;
+
+		if (n.properties && Object.keys(n.properties).length) {
+			html += '<section class="mb-[22px]"><h4 class="font-[\'Spline_Sans_Mono\'] text-[.72rem] tracking-[.1em] uppercase text-[#5d5142] m-0 mb-2 pb-1 border-b-[1.5px] border-dashed border-[#cdbfa3]">Details</h4>';
+			for (const [k,v] of Object.entries(n.properties))
+				if (v) html += `<div class="flex items-baseline gap-2 py-1 text-[.86rem]"><span class="text-[.7rem] font-semibold uppercase tracking-[.05em] min-w-[92px] text-[#5d5142]">${esc(k)}</span><span>${esc(v)}</span></div>`;
+			html += '</section>';
+		}
+
+		const fam = relRows(id, FAMILY_EDGES);
+		if (fam) html += `<section class="mb-[22px]"><h4 class="font-[\'Spline_Sans_Mono\'] text-[.72rem] tracking-[.1em] uppercase text-[#5d5142] m-0 mb-2 pb-1 border-b-[1.5px] border-dashed border-[#cdbfa3]">Family ties</h4>${fam}</section>`;
+
+		const com = relRows(id, COMMERCE_EDGES);
+		if (com) html += `<section class="mb-[22px]"><h4 class="font-[\'Spline_Sans_Mono\'] text-[.72rem] tracking-[.1em] uppercase text-[#5d5142] m-0 mb-2 pb-1 border-b-[1.5px] border-dashed border-[#cdbfa3]">Commercial ties</h4>${com}</section>`;
+
+		const arts = artifactsFor(id);
+		html += `<section class="mb-[22px]"><h4 class="font-[\'Spline_Sans_Mono\'] text-[.72rem] tracking-[.1em] uppercase text-[#5d5142] m-0 mb-2 pb-1 border-b-[1.5px] border-dashed border-[#cdbfa3]">Artifacts &amp; evidence</h4>`;
+		if (arts.length) {
+			html += arts.map(a => `<div class="flex gap-[11px] p-2.5 border-[1.4px] border-[#ddd0b5] rounded-lg mb-2 bg-[#f4ede0]">
+        <div class="w-[46px] h-[46px] flex-none rounded-md bg-[#ece2cf] flex items-center justify-center text-xl border-[1.4px] border-[#cdbfa3]" aria-hidden="true">${TYPE_ICON[a.properties?.artifactKind]||'📎'}</div>
+        <div class="text-[.82rem]">
+          <strong class="block font-['Fraunces'] text-[.95rem]">${esc(a.label)}</strong>
+          <span>${esc(a.summary||'')}</span>
+          ${a.properties?.altText?`<span class="text-[#5d5142] text-[.76rem] mt-0.5 block">Alt text: ${esc(a.properties.altText)}</span>`:''}
+        </div></div>`).join('');
+		} else {
+			html += `<p class="text-[.83rem] text-[#5d5142] m-0">No artifacts linked yet.</p>`;
+		}
+		if (n.type !== 'ARTIFACT')
+			html += `<button class="mt-2.5 font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px" data-action="link-artifact" data-arg="${id}">+ Attach an artifact</button>`;
+		html += `</section>`;
+
+		html += `<section class="flex gap-2">
+    <button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px" data-action="connect" data-arg="${id}">+ Add relationship</button>
+    <button class="font-semibold text-[.76rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-3 py-1.5 rounded-lg cursor-pointer transition-transform hover:-translate-y-px" data-action="add" data-arg="${n.type}" data-arg2="${id}">Edit</button>
+  </section>`;
+
+		document.getElementById('drawerBody').innerHTML = html;
+
+		// Toggle tailwind transform classes for drawer visibility
+		document.getElementById('drawer').classList.remove('translate-x-full');
+		document.getElementById('drawerBg').classList.remove('hidden');
+		document.getElementById('drawerBg').classList.add('block');
+		document.getElementById('drawer').focus();
+	}
+
+	function relRows(id, types) {
+		const rows = G.edges.filter(e => types.includes(e.type) && (e.from===id||e.to===id)).map(e => {
+			const outgoing = e.from===id;
+			const other = node(outgoing ? e.to : e.from);
+			if (!other) return '';
+			const verb = outgoing ? VERB[e.type] : invert(e.type);
+			const extra = e.properties ? Object.values(e.properties).join(', ') : '';
+			const confColor = e.confidence==='CONFIRMED' ? 'text-[#2f5d52]' : (e.confidence==='PROBABLE' ? 'text-[#b08326]' : 'text-[#9c4a2e]');
+			return `<div class="flex items-baseline gap-2 py-1 text-[.86rem]"><span class="text-[.7rem] font-semibold uppercase tracking-[.05em] min-w-[92px] text-[#5d5142]">${esc(verb)}</span>
+      <a tabindex="0" role="button" data-action="open" data-arg="${other.id}" class="text-[#2a2118] decoration-transparent border-b-[1.5px] border-[#cdbfa3] cursor-pointer hover:border-[#2a2118]">${esc(other.label)}</a>
+      ${extra?`<span class="text-[#5d5142] text-[.76rem]">(${esc(extra)})</span>`:''}
+      <span class="text-[.6rem] font-semibold uppercase tracking-[.06em] ${confColor}">${e.confidence}</span></div>`;
+		}).filter(Boolean);
+		return rows.length ? rows.join('') : '';
+	}
+	function invert(t) {
+		const map = { PARENT_OF:'child of', EMPLOYS:'works for', OWNS:'owned by', PARTNER_IN:'has partner', MEMBER_OF:'has member', SUCCEEDED_BY:'succeeds' };
+		return map[t] || VERB[t];
+	}
+	function artifactsFor(id) {
+		const myEdgeIds = G.edges.filter(e => e.from===id||e.to===id).map(e => e.id);
+		const set = new Set();
+		G.edges.forEach(e => { if (['EVIDENCES','DEPICTS','AUTHORED_BY'].includes(e.type)) { if (e.to===id || myEdgeIds.includes(e.to)) set.add(e.from); } });
+		return [...set].map(node).filter(n => n && n.type==='ARTIFACT');
+	}
+	function closeDrawer() {
+		document.getElementById('drawer').classList.add('translate-x-full');
+		document.getElementById('drawerBg').classList.add('hidden');
+		document.getElementById('drawerBg').classList.remove('block');
+		if (lastFocus) lastFocus.focus();
+	}
+
+	/* ============================================================
+       CANVAS RENDERING (Identical to original logic)
+    ============================================================ */
+	function renderTree() {
+		const cv = document.getElementById('treeCanvas');
+		const ctx = cv.getContext('2d');
+		const W = cv.clientWidth || cv.parentElement.clientWidth || 900, H = 560;
+		cv.width = W*devicePixelRatio; cv.height = H*devicePixelRatio;
+		ctx.scale(devicePixelRatio, devicePixelRatio);
+		ctx.clearRect(0,0,W,H);
+		ctx.fillStyle = '#f6efe0'; ctx.fillRect(0,0,W,H);
+
+		const people = G.nodes.filter(n => n.type==='PERSON' && passesFilter(n));
+		const gen = {}; people.forEach(p => gen[p.id]=0);
+		for (let i=0;i<8;i++) G.edges.forEach(e => {
+			if (e.type==='PARENT_OF' && gen[e.from]!=null && gen[e.to]!=null) gen[e.to] = Math.max(gen[e.to], gen[e.from]+1);
+		});
+		const levels = {};
+		people.forEach(p => { (levels[gen[p.id]] ||= []).push(p); });
+		const maxGen = Math.max(0,...Object.keys(levels).map(Number));
+		const pos = {};
+		Object.entries(levels).forEach(([g,arr]) => {
+			arr.forEach((p,i) => { pos[p.id] = { x:(W/(arr.length+1))*(i+1), y:60 + (H-120)*(maxGen?g/maxGen:0) }; });
+		});
+
+		G.edges.forEach(e => {
+			if (!pos[e.from] || !pos[e.to]) return;
+			const a=pos[e.from], b=pos[e.to];
+			ctx.beginPath(); ctx.moveTo(a.x,a.y);
+			if (e.type==='PARENT_OF') {
+				ctx.strokeStyle = '#9c4a2e'; ctx.lineWidth=2; ctx.setLineDash([]);
+				ctx.bezierCurveTo(a.x,(a.y+b.y)/2,b.x,(a.y+b.y)/2,b.x,b.y);
+			} else if (e.type==='PARTNERED_WITH') {
+				ctx.strokeStyle = '#b08326'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+				ctx.lineTo(b.x,b.y);
+			} else return;
+			ctx.stroke();
+		});
+		ctx.setLineDash([]);
+
+		treeHit = [];
+		people.forEach(p => {
+			const {x,y}=pos[p.id];
+			ctx.beginPath(); ctx.arc(x,y,8,0,7); ctx.fillStyle='#9c4a2e'; ctx.fill();
+			ctx.strokeStyle='#2a2118'; ctx.lineWidth=1.5; ctx.stroke();
+			ctx.fillStyle='#2a2118'; ctx.font='600 12px "Spline Sans"'; ctx.textAlign='center';
+			ctx.fillText(p.label, x, y-14);
+			treeHit.push({x,y,r:14,id:p.id});
+		});
+	}
+	let treeHit = [];
+	document.getElementById('treeCanvas').addEventListener('click', ev => {
+		const r = ev.target.getBoundingClientRect();
+		const hit = treeHit.find(h => Math.hypot(h.x-(ev.clientX-r.left),h.y-(ev.clientY-r.top)) < h.r);
+		if (hit) openDrawer(hit.id);
+	});
+
+	let netPos = {}, netHit = [], panX=0, panY=0, dragging=false, dragStart=null;
+	function renderNet() {
+		const cv = document.getElementById('netCanvas');
+		const ctx = cv.getContext('2d');
+		const W = cv.clientWidth || cv.parentElement.clientWidth || 900, H = 600;
+		cv.width = W*devicePixelRatio; cv.height = H*devicePixelRatio;
+		ctx.scale(devicePixelRatio, devicePixelRatio);
+
+		const ns = G.nodes.filter(passesFilter);
+		ns.forEach((n,i) => {
+			if (!netPos[n.id]) {
+				const ang = (i/ns.length)*Math.PI*2;
+				netPos[n.id] = { x:W/2+Math.cos(ang)*Math.min(W,H)*0.32, y:H/2+Math.sin(ang)*Math.min(W,H)*0.32 };
+			}
+		});
+		for (let pass=0; pass<60; pass++) {
+			ns.forEach(a => { ns.forEach(b => {
+				if (a===b) return;
+				let dx=netPos[a.id].x-netPos[b.id].x, dy=netPos[a.id].y-netPos[b.id].y;
+				let d=Math.hypot(dx,dy)||1; if (d<150){ const f=(150-d)/d*0.5; netPos[a.id].x+=dx*f; netPos[a.id].y+=dy*f; }
+			});});
+			G.edges.forEach(e => {
+				if (!netPos[e.from]||!netPos[e.to]) return;
+				let dx=netPos[e.to].x-netPos[e.from].x, dy=netPos[e.to].y-netPos[e.from].y;
+				let d=Math.hypot(dx,dy)||1, f=(d-130)/d*0.06;
+				netPos[e.from].x+=dx*f; netPos[e.from].y+=dy*f;
+				netPos[e.to].x-=dx*f; netPos[e.to].y-=dy*f;
+			});
+		}
+		ctx.clearRect(0,0,W,H);
+		ctx.fillStyle='#f6efe0'; ctx.fillRect(0,0,W,H);
+		ctx.save(); ctx.translate(panX,panY);
+
+		G.edges.forEach(e => {
+			let from=netPos[e.from], to=netPos[e.to];
+			if (!from || !to) return;
+			if (FAMILY_EDGES.includes(e.type)) { ctx.strokeStyle='#9c4a2e'; ctx.setLineDash([]); }
+			else if (COMMERCE_EDGES.includes(e.type)) { ctx.strokeStyle='#2f5d52'; ctx.setLineDash([]); }
+			else { ctx.strokeStyle='#b08326'; ctx.setLineDash([4,3]); }
+			ctx.lineWidth = e.confidence==='UNCERTAIN'?1:2;
+			ctx.beginPath(); ctx.moveTo(from.x,from.y); ctx.lineTo(to.x,to.y); ctx.stroke();
+		});
+		ctx.setLineDash([]);
+
+		netHit=[];
+		ns.forEach(n => {
+			const p=netPos[n.id]; if(!p) return;
+			const col = n.type==='PERSON'?'#9c4a2e':n.type==='BUSINESS'?'#2f5d52':'#b08326';
+			const r = n.type==='ARTIFACT'?7:11;
+			ctx.beginPath();
+			if (n.type==='BUSINESS') ctx.rect(p.x-r,p.y-r,r*2,r*2);
+			else ctx.arc(p.x,p.y,r,0,7);
+			ctx.fillStyle=col; ctx.fill();
+			ctx.strokeStyle='#2a2118'; ctx.lineWidth=1.4; ctx.stroke();
+			ctx.fillStyle='#2a2118'; ctx.font='600 11px "Spline Sans"'; ctx.textAlign='center';
+			ctx.fillText(n.label, p.x, p.y-r-5);
+			netHit.push({x:p.x+panX,y:p.y+panY,r:r+6,id:n.id});
+		});
+		ctx.restore();
+	}
+	const netCv = document.getElementById('netCanvas');
+	netCv.addEventListener('mousedown', e => { dragging=true; dragStart={x:e.clientX-panX,y:e.clientY-panY}; });
+	window.addEventListener('mouseup', ()=> dragging=false);
+	netCv.addEventListener('mousemove', e => { if (dragging) { panX=e.clientX-dragStart.x; panY=e.clientY-dragStart.y; renderNet(); }});
+	netCv.addEventListener('click', e => {
+		if (dragStart && Math.hypot(e.clientX-dragStart.x-panX,e.clientY-dragStart.y-panY)>4) return;
+		const r=netCv.getBoundingClientRect();
+		const hit=netHit.find(h=>Math.hypot(h.x-(e.clientX-r.left),h.y-(e.clientY-r.top))<h.r);
+		if (hit) openDrawer(hit.id);
+	});
+
+	/* ============================================================
+       MODALS (Add/Edit)
+    ============================================================ */
+	let editingId = null;
+	function openAdd(type, id=null) {
+		editingId = id; const n = id ? node(id) : null;
+		document.getElementById('modalTitle').textContent = (n?'Edit ':'Add ')+type.toLowerCase();
+
+		const formInpClasses = "w-full font-['Spline_Sans'] text-[.86rem] text-[#2a2118] bg-[#f4ede0] border-[1.5px] border-[#cdbfa3] rounded-md px-2.5 py-2 mt-1 mb-0.5";
+
+		let f = `<input type="hidden" name="type" value="${type}">`;
+		f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Name / title <span class="text-[#9c4a2e]">*</span></label><input class="${formInpClasses}" name="label" required value="${esc(n?.label||'')}"></div>`;
+		f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Summary</label><textarea class="${formInpClasses} min-h-[54px]" name="summary">${esc(n?.summary||'')}</textarea><div class="text-[.72rem] text-[#5d5142]">Write this so anyone can understand it.</div></div>`;
+		f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Confidence</label><select class="${formInpClasses}" name="confidence">${['CONFIRMED','PROBABLE','UNCERTAIN'].map(c=>`<option ${n?.confidence===c?'selected':''}>${c}</option>`).join('')}</select></div>`;
+
+		if (type==='BUSINESS') {
+			f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Kind</label><input class="${formInpClasses}" name="kind" value="${esc(n?.properties?.kind||'')}"></div>`;
+			f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Trades in</label><input class="${formInpClasses}" name="trades" value="${esc(n?.properties?.trades||'')}"></div>`;
+		}
+		if (type==='ARTIFACT') {
+			f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Artifact kind</label><select class="${formInpClasses}" name="artifactKind">${Object.keys(TYPE_ICON).map(k=>`<option ${n?.properties?.artifactKind===k?'selected':''}>${k}</option>`).join('')}</select></div>`;
+			f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Alt text <span class="text-[#9c4a2e]">*</span></label><textarea class="${formInpClasses} min-h-[54px]" name="altText" required>${esc(n?.properties?.altText||'')}</textarea></div>`;
+			f += `<div class="mb-3"><label class="block text-[.77rem] font-semibold mb-1">Transcript</label><textarea class="${formInpClasses} min-h-[54px]" name="transcript">${esc(n?.properties?.transcript||'')}</textarea></div>`;
+		}
+		f += `<div class="flex gap-2 justify-end pt-1.5"><button type="button" class="font-semibold text-[.83rem] border-[1.5px] border-[#2a2118] bg-transparent text-[#2a2118] px-4 py-2 rounded-lg cursor-pointer" data-action="close-modal">Cancel</button><button type="submit" class="font-semibold text-[.83rem] border-[1.5px] border-[#2a2118] bg-[#2a2118] text-[#f4ede0] px-4 py-2 rounded-lg cursor-pointer">${n?'Save changes':'Add'}</button></div>`;
+
+		document.getElementById('entityForm').innerHTML = f;
+		document.getElementById('modalBg').classList.remove('hidden');
+		document.getElementById('modalBg').classList.add('flex');
+	}
+	function saveEntity(ev) {
+		ev.preventDefault();
+		const fd = new FormData(ev.target); const type = fd.get('type'); const props = {};
+		['kind','trades','artifactKind','altText','transcript'].forEach(k => { if (fd.get(k)) props[k]=fd.get(k).trim(); });
+		if (editingId) {
+			const n = node(editingId); n.label=fd.get('label').trim(); n.summary=fd.get('summary').trim(); n.confidence=fd.get('confidence');
+			if (Object.keys(props).length) n.properties={...n.properties,...props};
+		} else {
+			G.nodes.push({ id: type[0].toLowerCase()+'_'+Date.now().toString(36), type, label:fd.get('label').trim(), summary:fd.get('summary').trim(), confidence:fd.get('confidence'), properties:props });
+		}
+		closeModal(); save(); netPos={}; render();
+	}
+	function closeModal(){ document.getElementById('modalBg').classList.add('hidden'); document.getElementById('modalBg').classList.remove('flex'); editingId=null; }
+
+	function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+	document.addEventListener('keydown', e => { if (e.key==='Escape') { closeModal(); closeDrawer(); }});
+	window.addEventListener('resize', () => { if(currentView!=='cards') render(); });
+
+	function handleAction(el) {
+		const a = el.dataset.action, arg = el.dataset.arg, arg2 = el.dataset.arg2;
+		switch (a) {
+			case 'view': setView(arg); break;
+			case 'add': openAdd(arg, arg2 || null); break;
+			case 'open': openDrawer(arg); break;
+			case 'close-drawer': closeDrawer(); break;
+			case 'close-modal': closeModal(); break;
+		}
+	}
+	document.addEventListener('click', e => { const el = e.target.closest('[data-action]'); if (el) { e.preventDefault(); handleAction(el); }});
+	document.getElementById('search').addEventListener('input', render);
+	document.getElementById('confFilter').addEventListener('change', render);
+	document.getElementById('entityForm').addEventListener('submit', saveEntity);
+
+	setView('cards');
+	load();
+</script>
 </body>
 </html>
