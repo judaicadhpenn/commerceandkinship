@@ -30,7 +30,7 @@ const artifacts = graphData.nodes.filter(n => n.type === 'ARTIFACT');
 		<h2>People ({people.length})</h2>
 		{people.map(person => (
 			<div class="card">
-				<a href={`/entity/${person.id}`}>{person.label}</a>
+				<a href={`/commerceandkinship/entity/${person.id}`}>{person.label}</a>
 				<p style="font-size: 0.9em; margin: 0.5em 0 0;">{person.summary}</p>
 			</div>
 		))}
