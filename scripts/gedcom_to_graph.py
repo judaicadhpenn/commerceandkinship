@@ -36,59 +36,42 @@ def gedcom_to_graph(gedcom_file_path, master_json_path):
                 "confidence": "CONFIRMED"
             })
 
-   # Pass 2: Extract Families
-       for element in root_child_elements:
-           if isinstance(element, FamilyElement):
-               husbands = []
-               wives = []
-               children = []
-
-               # Manually extract the pointer values for family members
-               for child in element.get_child_elements():
-                   tag = child.get_tag()
-                   value = child.get_value()
-                   if tag == "HUSB":
-                       husbands.append(value)
-                   elif tag == "WIFE":
-                       wives.append(value)
-                   elif tag == "CHIL":
-                       children.append(value)
-
-               # Partner Edges
-               for h in husbands:
-                   h_id = f"p_{h.replace('@', '').lower()}"
-                   for w in wives:
-                       w_id = f"p_{w.replace('@', '').lower()}"
-                       new_edges.append({
-                           "id": f"e_ged_{edge_counter}",
-                           "type": "PARTNERED_WITH",
-                           "from": h_id,
-                           "to": w_id,
-                           "confidence": "CONFIRMED"
-                       })
-                       edge_counter += 1
-
-               # Parent Edges
-               parents = husbands + wives
-               for p in parents:
-                   p_id = f"p_{p.replace('@', '').lower()}"
-                   for c in children:
-                       c_id = f"p_{c.replace('@', '').lower()}"
-                       new_edges.append({
-                           "id": f"e_ged_{edge_counter}",
-                           "type": "PARENT_OF",
-                           "from": p_id,
-                           "to": c_id,
-                           "confidence": "CONFIRMED"
-                       })
-                       edge_counter += 1
+    # Pass 2: Extract Families
+    for element in root_child_elements:
+        if isinstance(element, FamilyElement):
+            husbands = []
+            wives = []
+            children = []
+            # Manually extract the pointer values for family members
+            for child in element.get_child_elements():
+                tag = child.get_tag()
+                value = child.get_value()
+                if tag == "HUSB":
+                    husbands.append(value)
+                elif tag == "WIFE":
+                    wives.append(value)
+                elif tag == "CHIL":
+                    children.append(value)
+            # Partner Edges
+            for h in husbands:
+                h_id = f"p_{h.replace('@', '').lower()}"
+                for w in wives:
+                    w_id = f"p_{w.replace('@', '').lower()}"
+                    new_edges.append({
+                        "id": f"e_ged_{edge_counter}",
+                        "type": "PARTNERED_WITH",
+                        "from": h_id,
+                        "to": w_id,
+                        "confidence": "CONFIRMED"
+                    })
+                    edge_counter += 1
 
             # Parent Edges
             parents = husbands + wives
             for p in parents:
-                p_id = f"p_{p.get_pointer().replace('@', '').lower()}"
+                p_id = f"p_{p.replace('@', '').lower()}"
                 for c in children:
-                    c_id = f"p_{c.get_pointer().replace('@', '').lower()}"
+                    c_id = f"p_{c.replace('@', '').lower()}"
                     new_edges.append({
                         "id": f"e_ged_{edge_counter}",
                         "type": "PARENT_OF",
