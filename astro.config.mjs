@@ -6,4 +6,7 @@ export default defineConfig({
     site: 'https://judaicadh.github.io',
     // Replace with your repository name
     base: '/commercekinship',
+    build: {
+        format: 'directory' // This is the crucial setting for GitHub Pages
+    }
 });
