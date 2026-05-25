@@ -128,4 +128,4 @@ if __name__ == "__main__":
         if not os.path.exists(master_file):
             print("Creating empty master graph for Astro to build from...")
             with open(master_file, 'w', encoding='utf-8') as f:
-                json.dump({"nodes": [], "edges": []}, f)cal merge.")
+                json.dump({"nodes": [], "edges": []}, f)
