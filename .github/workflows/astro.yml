@@ -51,6 +51,14 @@ jobs:
           python scripts/gedcom_to_graph.py
           # 2. Translate the freshly updated master JSON into Linked Data
           python scripts/graph_to_ld.py
+          
+          # 3. QUICK FIX: Move the JSON file to where Astro expects it
+          # If your Python script dumps it in the root folder, this moves it into src/raw_data/
+          mv kinship-commerce-graph.json src/raw_data/ || true
+          
+          # 4. DEBUG: Print out where all JSON files are so you can see what happened
+          echo "--- FINDING GENERATED JSON FILES ---"
+          find . -name "*.json"
       # --- END: PYTHON DATA PIPELINE ---
 
       - name: Detect package manager
