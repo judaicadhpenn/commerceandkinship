@@ -111,10 +111,10 @@ def gedcom_to_graph(gedcom_file_path, master_json_path):
 
 if __name__ == "__main__":
     # Point directly to your src/data folder where Astro reads your master file
-    master_file = 'src/data/kinship-commerce-graph.json'
+    master_file = 'src/raw_data/kinship-commerce-graph.json'
 
     # Check for any incoming GEDCOM files in your raw repository upload folder
-    ged_files = glob.glob('raw_data/*.ged')
+    ged_files = glob.glob('src/raw_data/*.ged')
 
     if ged_files:
         # Guarantee the destination folder directory structure exists
