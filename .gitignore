@@ -17,6 +17,10 @@ pnpm-debug.log*
 .env
 .env.production
 
+# generated data (run scripts/gedcom_to_graph.py to rebuild)
+public/graph.json
+src/raw_data/kinship-commerce-graph.json
+
 # macOS-specific files
 .DS_Store
 

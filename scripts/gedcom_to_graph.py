@@ -118,13 +118,20 @@ def gedcom_to_graph(gedcom_file_path, master_json_path):
     print(f"Merged {added_nodes_count} new individuals and {added_edges_count} new family ties into the master graph.")
 
 
+def sync_public(master_file, public_file='public/graph.json'):
+    """Copy the master graph to public/ so the browser can fetch it."""
+    import shutil
+    os.makedirs(os.path.dirname(public_file), exist_ok=True)
+    shutil.copy2(master_file, public_file)
+    print(f"Synced {master_file} → {public_file}")
+
+
 if __name__ == "__main__":
     master_file = 'src/raw_data/kinship-commerce-graph.json'
+    public_file = 'public/graph.json'
 
-    # Fix 1: Point glob to the correct src/raw_data folder
     ged_files = glob.glob('src/raw_data/*.ged')
 
-    # Guarantee the destination folder directory structure exists
     os.makedirs(os.path.dirname(master_file), exist_ok=True)
 
     if ged_files:
@@ -133,8 +140,9 @@ if __name__ == "__main__":
     else:
         print("No new GEDCOM files detected in src/raw_data/. Skipping genealogical merge.")
 
-        # Fix 2: If the JSON file doesn't exist at all, create an empty one so Astro doesn't crash
         if not os.path.exists(master_file):
             print("Creating empty master graph for Astro to build from...")
             with open(master_file, 'w', encoding='utf-8') as f:
                 json.dump({"nodes": [], "edges": []}, f)
+
+    sync_public(master_file, public_file)
