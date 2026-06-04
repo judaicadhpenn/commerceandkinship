@@ -1,5 +1,6 @@
 ---
 // No inline data — graph is fetched client-side from /graph.json
+const base = import.meta.env.BASE_URL.replace(/\/$/, ''); // e.g. "/commercekinship"
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -294,7 +295,7 @@
 
 <div aria-live="polite" class="sr-only" id="liveRegion"></div>
 
-<script is:inline>
+<script is:inline define:vars={{ base }}>
   let G = null;
   let allResults = [];
   let shownCount = 0;
@@ -303,7 +304,7 @@
   /* ---- Data loading ---- */
   async function loadGraph() {
     try {
-      const res = await fetch('/graph.json');
+      const res = await fetch(base + '/graph.json');
       if (!res.ok) throw new Error('fetch failed');
       G = await res.json();
 
@@ -430,7 +431,7 @@
 
     document.getElementById('drawerBody').innerHTML = html;
     document.getElementById('drawerActions').innerHTML =
-      `<a class="btn-entity" href="/entity/${id}">View full record &rarr;</a>`;
+      `<a class="btn-entity" href="${base}/entity/${id}">View full record &rarr;</a>`;
 
     document.getElementById('drawer').classList.add('open');
     document.getElementById('drawerBg').classList.add('open');

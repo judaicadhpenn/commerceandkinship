@@ -1,7 +1,7 @@
 ---
 // src/pages/entity/[id].astro
 import graphData from '../../raw_data/kinship-commerce-graph.json';
-import "../../../styles/global.css";
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 // 1. Tell Astro which pages to generate
 export function getStaticPaths() {
     return graphData.nodes.map(node => {
@@ -31,7 +31,7 @@ const connectedEdges = graphData.edges.filter(e => e.from === id || e.to === id)
     </style>
 </head>
 <body>
-<a href="/">&larr; Back to Directory</a>
+<a href={base + '/'}>&larr; Back to Directory</a>
 
 <h1 style="margin-bottom: 0.2rem;">{node.label}</h1>
 <span class="badge">{node.type}</span>
@@ -68,7 +68,7 @@ const connectedEdges = graphData.edges.filter(e => e.from === id || e.to === id)
               {isOutgoing ? edge.type : `TARGET OF ${edge.type}`}
             </span>
                     <br />
-                    <a href={`/entity/${otherNode.id}`} style="color: #2a2118; font-weight: bold;">
+                    <a href={`${base}/entity/${otherNode.id}`} style="color: #2a2118; font-weight: bold;">
                         {otherNode.label}
                     </a>
                     <span style="font-size: 0.7em; margin-left: 10px; color: #fa8c00;">({edge.confidence})</span>
